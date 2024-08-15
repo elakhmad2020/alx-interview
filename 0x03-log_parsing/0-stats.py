@@ -1,54 +1,51 @@
 #!/usr/bin/python3
+""" 0-stats """
 
 import sys
 
-
-def print_msg(dict_sc, total_file_size):
-    """
-    Method to print
-    Args:
-        dict_sc: dict of status codes
-        total_file_size: total of the file
-    Returns:
-        Nothing
-    """
-
-    print("File size: {}".format(total_file_size))
-    for key, val in sorted(dict_sc.items()):
-        if val != 0:
-            print("{}: {}".format(key, val))
-
-
 total_file_size = 0
-code = 0
-counter = 0
-dict_sc = {"200": 0,
-           "301": 0,
-           "400": 0,
-           "401": 0,
-           "403": 0,
-           "404": 0,
-           "405": 0,
-           "500": 0}
+count = 0
+status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
 
 try:
     for line in sys.stdin:
-        parsed_line = line.split()  # ✄ trimming
-        parsed_line = parsed_line[::-1]  # inverting
+        # Strip and split the line to parse the components
+        line_parse = line.strip().split(" ")
 
-        if len(parsed_line) > 2:
-            counter += 1
+        # Ensure line has enough components to avoid index errors
+        if len(line_parse) > 4:
+            try:
+                # Assume the status code is the second to last element
+                status_code = int(line_parse[-2])
+                # Assume the file size is the last element
+                file_size = int(line_parse[-1])
 
-            if counter <= 10:
-                total_file_size += int(parsed_line[0])  # file size
-                code = parsed_line[1]  # status code
+                # Update total file size
+                total_file_size += file_size
 
-                if (code in dict_sc.keys()):
-                    dict_sc[code] += 1
+                # Update status code if status code is in the dictionary
+                if status_code in status_codes:
+                    status_codes[status_code] += 1
 
-            if (counter == 10):
-                print_msg(dict_sc, total_file_size)
-                counter = 0
+                # Update line count
+                count += 1
 
+                # Print metrics after every 10 lines
+                if count % 10 == 0:
+                    print(f"File size: {total_file_size}")
+                    for k, v in sorted(status_codes.items()):
+                        if v != 0:
+                            print(f"{k}: {v}")
+                    sys.stdout.flush()
+            except (ValueError, IndexError):
+                continue  # Skip if there's an issue with parsing these values
+
+except KeyboardInterrupt:
+    pass
 finally:
-    print_msg(dict_sc, total_file_size)
+    # Print final metrics when the script is interrupted
+    print(f"File size: {total_file_size}")
+    for k, v in sorted(status_codes.items()):
+        if v != 0:
+            print(f"{k}: {v}")
+    sys.stdout.flush()
